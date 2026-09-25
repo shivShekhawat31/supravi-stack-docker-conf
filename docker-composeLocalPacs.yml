@@ -1,0 +1,126 @@
+version: "3.9"
+
+services:
+  dicom-cases-ui:
+    image: project-dicom-cases-ui:latest
+    container_name: dicom-cases-ui
+    ports:
+      - "4000:3000"
+    working_dir: /app
+    entrypoint: ["docker-entrypoint.sh"]
+    command: ["npm", "run", "start"]
+    restart: "no"
+
+  orthbridge:
+    image: orthbridge-app:latest
+    container_name: orthbridge
+    environment:
+      - TZ=Asia/Kolkata
+    ports:
+      - "5050:5050"
+    working_dir: /app
+    entrypoint: ["docker-entrypoint.sh"]
+    command: ["node", "index.js"]
+    restart: unless-stopped
+    volumes:
+      - /project/expauth/uploadReport:/project/expauth/uploadReport
+      - /root/Dropbox/images:/root/Dropbox/images
+      - /root/Dropbox/images/volenteReports:/root/Dropbox/images/volenteReports
+      - /shared:/shared
+      - /project/orthbridge/.env:/app/.env:ro
+
+  pdfgen3:
+    image: project-pdfgen:latest
+    container_name: pdfgen3
+    ports:
+      - "6000:6000"
+    working_dir: /app
+    entrypoint: ["docker-entrypoint.sh"]
+    command: ["node", "server.js"]
+    restart: "no"
+
+  expauth:
+    image: expauth-app:latest
+    container_name: expauth
+    environment:
+      - TZ=Asia/Kolkata
+    ports:
+      - "5500:5500"
+    working_dir: /app
+    entrypoint: ["docker-entrypoint.sh"]
+    command: ["node", "index.js"]
+    restart: unless-stopped
+    volumes:
+      - /project/expauth/uploadHistory:/app/uploadHistory
+      - /project/expauth/uploadReport:/app/uploadReport
+      - /project/expauth/uploads:/app/uploads
+      - /project/expauth/.env:/app/.env
+
+  node-reverse-proxy:
+    image: project-node-reverse-proxy:latest
+    container_name: nodereverseproxy
+    environment:
+      - TZ=Asia/Kolkata
+    ports:
+      - "8000:8000"
+    working_dir: /app
+    entrypoint: ["docker-entrypoint.sh"]
+    command: ["node", "http-proxy.js"]
+    restart: "no"
+    volumes:
+      - /project/nodeJsAsReverseProxyOrthanc/.env:/app/.env:ro
+
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    environment:
+      - TZ=Asia/Kolkata
+    ports:
+      - "27017:27017"
+    restart: "no"
+    volumes:
+      - /root/mongo_data:/data/db
+
+  dcmserver:
+    image: iotcom/dcm-server:v1
+    container_name: dcmserver
+    environment:
+      - TZ=Asia/Kolkata
+    ports:
+      - "4242:4242"
+      - "8042:8042"
+    restart: unless-stopped
+    volumes:
+      - /root/dcmserver/data:/var/lib/orthanc/db
+      - /root/dcmserver:/etc/orthanc
+
+  dcmserver-qnap:
+    image: iotcom/dcm-server:v1
+    container_name: dcmserver-qnap
+    environment:
+      - TZ=Asia/Kolkata
+    ports:
+      - "4243:4242"
+      - "8043:8042"
+    restart: unless-stopped
+    volumes:
+      - /mnt/qnap/data:/var/lib/orthanc/db
+      - /mnt/qnap:/etc/orthanc
+
+  nginx:
+    image: nginx:1.22.1
+    container_name: nginx
+    environment:
+      - TZ=Asia/Kolkata
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    volumes:
+      - /var/www:/var/www
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/conf.d:/etc/nginx/conf.d
+
+networks:
+  default:
+    driver: bridge
