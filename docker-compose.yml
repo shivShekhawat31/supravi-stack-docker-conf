@@ -84,6 +84,17 @@ services:
       - /root/orthanc/data:/var/lib/orthanc/db
       - /root/orthanc:/etc/orthanc
 
+  orthanc-qnap:
+    image: iotcomdocker/orthancprod:latest
+    container_name: orthanc-qnap
+    ports:
+      - "4243:4242"
+      - "8043:8042"
+    restart: unless-stopped
+    volumes:
+      - /mnt/qnap/data:/var/lib/orthanc/db
+      - /mnt/qnap:/etc/orthanc
+
   nginx:
     image: nginx:1.22.1
     container_name: nginx
