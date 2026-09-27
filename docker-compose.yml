@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   dicom-cases-ui:
     image: project-dicom-cases-ui:latest
@@ -92,8 +90,23 @@ services:
       - "8043:8042"
     restart: unless-stopped
     volumes:
-      - /mnt/qnap/data:/var/lib/orthanc/db
-      - /mnt/qnap:/etc/orthanc
+      - /mnt/qnap/dcmserver/data:/var/lib/orthanc/db
+      - /mnt/qnap/dcmserver:/etc/orthanc
+
+  orthanc-archiver:
+    image: orthanc-archiver:latest
+    container_name: orthancarchiver
+    ports:
+      - "5060:5060"
+    working_dir: /app
+    entrypoint: ["docker-entrypoint.sh"]
+    command: ["node", "index.js"]
+    restart: unless-stopped
+    volumes:
+      - /project/orthanc-archiver/.env:/app/.env:ro
+    depends_on:
+      - orthanc
+      - orthanc-qnap
 
   nginx:
     image: nginx:1.22.1
